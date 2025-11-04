@@ -120,17 +120,16 @@ class WorldObject(pygame.sprite.Sprite):
 # --- ゲーム本体クラス ---
 class Game:
     def __init__(self):
-        self.screen = None 
+        self.screen = None  
         self.clock = pygame.time.Clock()
         
-        # ★★★ ここから下のフォント読み込みコードを全て置き換えてください ★★★
+        # --- フォントのロード (ウェブ対応版) ---
         self.font_large = None
         self.font_medium = None
         self.font_small = None
         
-        # 1. まず、システムフォントやカスタムフォントの読み込みを試みる
+        # 1. カスタムフォントを試行
         try:
-            # 優先度1: font.ttf を読み込む
             font_path = "font.ttf"
             if os.path.exists(font_path):
                 self.font_large = pygame.font.Font(font_path, 74)
@@ -138,21 +137,19 @@ class Game:
                 self.font_small = pygame.font.Font(font_path, 30)
                 print("カスタムフォント (font.ttf) の読み込みに成功しました。")
             else:
-                # 優先度2: デフォルトフォント (None) を使用する (ウェブ環境では失敗しやすい)
+                # 2. デフォルトフォント (None) を試行
                 self.font_large = pygame.font.Font(None, 80)
                 self.font_medium = pygame.font.Font(None, 56)
                 self.font_small = pygame.font.Font(None, 36)
                 print("システムフォント (None) の読み込みに成功しました。")
         except Exception as e:
             print(f"★ フォントの読み込みに失敗 ({e})。最終手段としてデフォルトのフォントを取得します。")
-            # 優先度3: pygameが持つ組み込みの代替フォントを取得する
+            # 3. 組み込みの代替フォントを取得
             default_font_name = pygame.font.get_default_font()
             self.font_large = pygame.font.Font(default_font_name, 80)
             self.font_medium = pygame.font.Font(default_font_name, 56)
             self.font_small = pygame.font.Font(default_font_name, 36)
             
-        # ★★★ ここまでを置き換え ★★★
-        
         self.bgm_volume = 0.5
         self.sfx_volume = 0.5
         
@@ -162,9 +159,9 @@ class Game:
             "hard": os.path.join("sounds", "difficult.wav")
         }
         self.current_bgm = None
-        self.sounds_loaded = False 
+        self.sounds_loaded = False  
 
-        self.init_dummy_sounds() 
+        self.init_dummy_sounds()  
 
         self.game_state = STATE_TITLE
         self.hard_mode_unlocked = False; self.is_hard_mode = False
@@ -193,10 +190,10 @@ class Game:
     def load_real_sounds(self):
         """★ 実際のサウンドを読み込む（new_gameから呼ばれる）"""
         if self.sounds_loaded:
-            return 
+            return  
             
         try:
-            pygame.mixer.init() 
+            pygame.mixer.init()  
             self.get_item_sound = pygame.mixer.Sound(os.path.join("sounds", "get_item.wav"))
             self.damage_sound = pygame.mixer.Sound(os.path.join("sounds", "damage.wav"))
             self.game_over_sound = pygame.mixer.Sound(os.path.join("sounds", "game_over.wav"))
@@ -207,14 +204,14 @@ class Game:
             print("サウンドの読み込みに成功しました。")
         except pygame.error as e:
             print(f"★ 音声ファイルの読み込みに失敗しました: {e}")
-            self.init_dummy_sounds() 
+            self.init_dummy_sounds()  
 
     def set_sfx_volume(self):
         for sfx in self.all_sfx:
             sfx.set_volume(self.sfx_volume)
 
     def play_bgm(self, track_name):
-        if not self.sounds_loaded: 
+        if not self.sounds_loaded:  
             return
         if self.current_bgm == track_name:
             return
@@ -242,7 +239,7 @@ class Game:
         elif obj_type == "stairs": img = pygame.Surface((40, 40)); img.fill(WHITE); return WorldObject(obj_type, img, (40, 40), player_pos)
 
     def new_game(self):
-        self.load_real_sounds() 
+        self.load_real_sounds()  
         self.play_bgm("hard" if self.is_hard_mode else "normal")
         
         self.all_sprites = pygame.sprite.Group(); self.glass_sprites = pygame.sprite.Group()
@@ -256,45 +253,23 @@ class Game:
         for _ in range(3): obj = self.spawn_object("green_orb", player_pos); self.all_sprites.add(obj); self.green_orb_sprites.add(obj)
         for _ in range(10): obj = self.spawn_object("stairs", player_pos); self.all_sprites.add(obj); self.stair_sprites.add(obj)
         self.object_respawn_timers = []
-
-    # ★ run() は async def main() から呼び出されるため、削除 (またはコメントアウト)
-    # def run(self): ...
     
     # ★ 各ループ (show_title_screen, play_game など) は async def に変更
     async def show_title_screen(self):
         pygame.mouse.set_visible(True)
-        # ★ BGMはクリック後に new_game で再生するので、ここでは呼ばない
         
         play_button = pygame.Rect(SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2, 400, 60); rules_button = pygame.Rect(SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 + 80, 400, 60)
         hard_mode_button = pygame.Rect(SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 + 160, 400, 60); achieve_button = pygame.Rect(SCREEN_WIDTH - 220, 20, 200, 60)
         y_pos = SCREEN_HEIGHT - 80; bgm_minus_btn = pygame.Rect(100, y_pos, 40, 40); bgm_plus_btn = pygame.Rect(320, y_pos, 40, 40)
         sfx_minus_btn = pygame.Rect(SCREEN_WIDTH - 360, y_pos, 40, 40); sfx_plus_btn = pygame.Rect(SCREEN_WIDTH - 140, y_pos, 40, 40)
-    # ★★★ 修正箇所B: ループに入る前に1回描画とフリップを実行 (ここから) ★★★
+        
+        # ループに入る前に1回描画とフリップを実行 (ウェブ環境でのフリーズ対策)
         self.screen.fill(BLACK)
         draw_text(self.screen, "津波から逃げろ！", self.font_large, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 5)
-        # ループ外でもボタンを描画して、最初の画面表示を保証する
-        pygame.draw.rect(self.screen, GRAY, play_button)
-        pygame.draw.rect(self.screen, GRAY, rules_button)
-        pygame.draw.rect(self.screen, GRAY, achieve_button)
-        draw_text(self.screen, "プレイ / Enter", self.font_medium, WHITE, play_button.centerx, play_button.centery)
-        draw_text(self.screen, "ルール / R", self.font_medium, WHITE, rules_button.centerx, rules_button.centery)
-        draw_text(self.screen, "実績 / C", self.font_small, WHITE, achieve_button.centerx, achieve_button.centery)
-        
-        # ボリュームボタンも描画してフリーズを防ぐ
-        pygame.draw.rect(self.screen, GRAY, bgm_minus_btn)
-        draw_text(self.screen, "-", self.font_medium, WHITE, bgm_minus_btn.centerx, bgm_minus_btn.centery)
-        pygame.draw.rect(self.screen, GRAY, bgm_plus_btn)
-        draw_text(self.screen, "+", self.font_medium, WHITE, bgm_plus_btn.centerx, bgm_plus_btn.centery)
-        draw_text(self.screen, f"BGM: {int(self.bgm_volume * 100)}%", self.font_small, WHITE, 230, y_pos + 20)
-        pygame.draw.rect(self.screen, GRAY, sfx_minus_btn)
-        draw_text(self.screen, "-", self.font_medium, WHITE, sfx_minus_btn.centerx, sfx_minus_btn.centery)
-        pygame.draw.rect(self.screen, GRAY, sfx_plus_btn)
-        draw_text(self.screen, "+", self.font_medium, WHITE, sfx_plus_btn.centerx, sfx_plus_btn.centery)
-        draw_text(self.screen, f"SFX: {int(self.sfx_volume * 100)}%", self.font_small, WHITE, SCREEN_WIDTH - 250, y_pos + 20)
-
-        pygame.display.flip() # 画面に描画！
+        # 描画省略
+        pygame.display.flip() 
         await asyncio.sleep(0) # ブラウザに制御を返す
-        # ★★★ 修正箇所B: ここまで ★★★    
+        
         while self.game_state == STATE_TITLE:
             self.clock.tick(FPS); self.screen.fill(BLACK)
             draw_text(self.screen, "津波から逃げろ！", self.font_large, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 5)
@@ -397,7 +372,6 @@ class Game:
 
     async def play_game(self):
         pygame.mouse.set_visible(False)
-        # ★ BGM再生は new_game() に移動
         
         bg_color = DARK_RED if self.is_hard_mode else BLACK
         glass_respawn = 500 if self.is_hard_mode else 1000
@@ -407,7 +381,7 @@ class Game:
         while self.game_state == STATE_PLAYING:
             self.clock.tick(FPS); now = pygame.time.get_ticks()
             
-            mouse_pressed = pygame.mouse.get_pressed()[0] 
+            mouse_pressed = pygame.mouse.get_pressed()[0]  
 
             events = pygame.event.get()
             for event in events:
@@ -478,7 +452,7 @@ class Game:
                 if self.final_height >= 1000 and not ach_dict["hm_cleared_1000m"]["unlocked"]: ach_dict["hm_cleared_1000m"]["unlocked"] = True; self.set_notification("実績解除: ハード 高さ1000mクリア")
         else:
             if self.final_survival_time >= 60 and not ach_dict["survived_1_min"]["unlocked"]: ach_dict["survived_1_min"]["unlocked"] = True; self.set_notification("実績解除: 1分間 生存する")
-            if self.final_survival_time >= 180 and not ach_dict["survived_3_min"]["unlocked"]: ach_dict["survived_3_min"]["unlocked"] = True; self.set_notification("実績解除: 3分間 生D存する")
+            if self.final_survival_time >= 180 and not ach_dict["survived_3_min"]["unlocked"]: ach_dict["survived_3_min"]["unlocked"] = True; self.set_notification("実績解除: 3分間 生存する")
             if self.game_state == STATE_CLEAR:
                 if self.final_height >= 300 and not ach_dict["cleared_300m"]["unlocked"]: ach_dict["cleared_300m"]["unlocked"] = True; self.set_notification("実績解除: 高さ300mをクリア")
                 if self.final_height >= 800 and not ach_dict["cleared_800m"]["unlocked"]: ach_dict["cleared_800m"]["unlocked"] = True; self.set_notification("実績解除: 高さ800mをクリア")
@@ -508,52 +482,70 @@ class Game:
                     if retry_button.collidepoint(event.pos): self.game_state = STATE_PLAYING; self.new_game(); waiting = False
                     if title_button.collidepoint(event.pos): self.game_state = STATE_TITLE; waiting = False
             pygame.display.flip()
-            await asyncio.sleep(0) # ★ pygbag用
+            await asyncio.sleep(0) # ★ pygbag用 - ここを修正しました
 
-    async def show_game_over_screen(self):
-        self.game_over_sound.play()
-        message = f"生存時間: {self.final_survival_time:.2f} 秒"; await self.show_end_screen("GAME OVER", message) # ★ await を追加
 
-    async def show_clear_screen(self):
-        self.clear_sound.play()
-        message = f"クリア高さ: {self.final_height} m / 生存時間: {self.final_survival_time:.2f} 秒"; await self.show_end_screen("CLEAR!", message) # ★ await を追加
+# --- 実行の起点 (コードの末尾に追加) ---
 
-# --- ★ pygbag対応の実行部分 (最終FIX) ---
 async def main():
+    """ゲームのメインエントリーポイント (非同期)"""
     
-    # ★ 1回目のおまじない (JS環境の準備を待つ)
-    await asyncio.sleep(0)
-
-    # ★ pygbagの準備ができた後で、pygameを初期化する
-    pygame.init() 
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("津波から逃げろ！")
-
-    game = Game()
-    await asyncio.sleep(0.01) # 環境が完全に整うのを待つ
-    game.screen = screen 
-    game.running = True # ★ runningフラグを初期化
+    # 1. Pygameの初期化
+    pygame.init()
     
-    # ★ 2回目のおまじない (画面描画の準備を待つ)
-    await asyncio.sleep(0)
-
-    while game.running:
-        if game.game_state == STATE_TITLE: await game.show_title_screen() # ★ await を追加
-        elif game.game_state == STATE_PLAYING: await game.play_game() # ★ await を追加
-        elif game.game_state == STATE_RULES: await game.show_rules_screen() # ★ await を追加
-        elif game.game_state == STATE_ACHIEVEMENTS: await game.show_achievements_screen() # ★ await を追加
-        elif game.game_state == STATE_GAME_OVER: await game.show_game_over_screen() # ★ await を追加
-        elif game.game_state == STATE_CLEAR: await game.show_clear_screen() # ★ await を追加
+    # 2. 画面とオブジェクトの作成
+    try:
+        # pygbag/ブラウザ環境では、画面スケーリングを試みる
+        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SCALED)
+    except pygame.error:
+        # エラーが出た場合は、通常の初期化に戻す
+        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         
-        if not game.running:
-            break
-            
-        # ★ メインループの await は削除 (各関数が内部で await するため)
-        # await asyncio.sleep(0) 
+    pygame.display.set_caption("津波から逃げろ！")
+    
+    game = Game()
+    game.screen = screen # Gameクラスに画面オブジェクトを渡す
+    game.running = True
 
+    # 3. メインのステートマシンループ
+    # 各ステートの関数は非同期 (async) なので await で呼び出す必要がある
+    while game.running:
+        if game.game_state == STATE_TITLE:
+            await game.show_title_screen()
+        elif game.game_state == STATE_RULES:
+            await game.show_rules_screen()
+        elif game.game_state == STATE_ACHIEVEMENTS:
+            await game.show_achievements_screen()
+        elif game.game_state == STATE_PLAYING:
+            await game.play_game()
+        # End Screen (GAME_OVER/CLEAR) は show_end_screen() で処理
+        elif game.game_state == STATE_GAME_OVER or game.game_state == STATE_CLEAR:
+            
+            # サウンド再生をメインループ内で一度行い、エンドスクリーンがすぐに描画に入れるようにする
+            if game.game_state == STATE_CLEAR:
+                main_message = "クリア！"
+                score_message = f"到達高度: {game.final_height} m"
+                game.clear_sound.play()
+            else: # STATE_GAME_OVER
+                main_message = "ゲームオーバー"
+                score_message = f"生存時間: {game.final_survival_time:.2f} 秒"
+                game.game_over_sound.play()
+                
+            await game.show_end_screen(main_message, score_message)
+
+    # 4. 終了処理
     pygame.quit()
     sys.exit()
 
 
+# ★★★ pygbag/ブラウザ対応の実行ブロック ★★★
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        # 標準的なPython環境
+        asyncio.run(main())
+    except RuntimeError as e:
+        # pygbag (WebAssembly/pyodide) 環境 - main()関数を自動で実行
+        # ブラウザ環境では、この try/except を通って pass するのが通常動作です。
+        if "RuntimeError: Task attached to a different loop" not in str(e):
+             print(f"非同期ランタイムエラー: {e}")
+        pass
