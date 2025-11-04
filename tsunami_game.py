@@ -123,29 +123,38 @@ class Game:
         self.screen = None 
         self.clock = pygame.time.Clock()
         
-        # ★ フォントはデフォルト(None)をまず試す
+        # ★★★ ここから下のフォント読み込みコードを全て置き換えてください ★★★
+        self.font_large = None
+        self.font_medium = None
+        self.font_small = None
+        
+        # 1. まず、システムフォントやカスタムフォントの読み込みを試みる
         try:
-            print("デフォルトフォント(None)を使用します。")
-            self.font_large = pygame.font.Font(None, 80)
-            self.font_medium = pygame.font.Font(None, 56)
-            self.font_small = pygame.font.Font(None, 36)
-        except Exception as e:
-            print(f"デフォルトフォントの読み込みに失敗: {e}")
-            try:
-                font_path = "font.ttf" 
+            # 優先度1: font.ttf を読み込む
+            font_path = "font.ttf"
+            if os.path.exists(font_path):
                 self.font_large = pygame.font.Font(font_path, 74)
                 self.font_medium = pygame.font.Font(font_path, 50)
                 self.font_small = pygame.font.Font(font_path, 30)
-            except Exception as e2:
-                print(f"カスタムフォントの読み込みにも失敗: {e2}")
-                # (最終手段)
-                self.font_large = pygame.font.Font(pygame.font.get_default_font(), 80)
-                self.font_medium = pygame.font.Font(pygame.font.get_default_font(), 56)
-                self.font_small = pygame.font.Font(pygame.font.get_default_font(), 36)
-
-
+                print("カスタムフォント (font.ttf) の読み込みに成功しました。")
+            else:
+                # 優先度2: デフォルトフォント (None) を使用する (ウェブ環境では失敗しやすい)
+                self.font_large = pygame.font.Font(None, 80)
+                self.font_medium = pygame.font.Font(None, 56)
+                self.font_small = pygame.font.Font(None, 36)
+                print("システムフォント (None) の読み込みに成功しました。")
+        except Exception as e:
+            print(f"★ フォントの読み込みに失敗 ({e})。最終手段としてデフォルトのフォントを取得します。")
+            # 優先度3: pygameが持つ組み込みの代替フォントを取得する
+            default_font_name = pygame.font.get_default_font()
+            self.font_large = pygame.font.Font(default_font_name, 80)
+            self.font_medium = pygame.font.Font(default_font_name, 56)
+            self.font_small = pygame.font.Font(default_font_name, 36)
+            
+        # ★★★ ここまでを置き換え ★★★
+        
         self.bgm_volume = 0.5
-        self.sfx_volume = 0.5
+        # ... (残りの __init__ のコードはそのまま)        self.sfx_volume = 0.5
         
         self.bgm_paths = {
             "lobby": os.path.join("sounds", "Lobby.wav"),
