@@ -154,7 +154,7 @@ class Game:
         # ★★★ ここまでを置き換え ★★★
         
         self.bgm_volume = 0.5
-        # ... (残りの __init__ のコードはそのまま)        self.sfx_volume = 0.5
+        self.sfx_volume = 0.5
         
         self.bgm_paths = {
             "lobby": os.path.join("sounds", "Lobby.wav"),
