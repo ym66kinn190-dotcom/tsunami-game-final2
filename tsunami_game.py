@@ -269,7 +269,32 @@ class Game:
         hard_mode_button = pygame.Rect(SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 + 160, 400, 60); achieve_button = pygame.Rect(SCREEN_WIDTH - 220, 20, 200, 60)
         y_pos = SCREEN_HEIGHT - 80; bgm_minus_btn = pygame.Rect(100, y_pos, 40, 40); bgm_plus_btn = pygame.Rect(320, y_pos, 40, 40)
         sfx_minus_btn = pygame.Rect(SCREEN_WIDTH - 360, y_pos, 40, 40); sfx_plus_btn = pygame.Rect(SCREEN_WIDTH - 140, y_pos, 40, 40)
+    # ★★★ 修正箇所B: ループに入る前に1回描画とフリップを実行 (ここから) ★★★
+        self.screen.fill(BLACK)
+        draw_text(self.screen, "津波から逃げろ！", self.font_large, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 5)
+        # ループ外でもボタンを描画して、最初の画面表示を保証する
+        pygame.draw.rect(self.screen, GRAY, play_button)
+        pygame.draw.rect(self.screen, GRAY, rules_button)
+        pygame.draw.rect(self.screen, GRAY, achieve_button)
+        draw_text(self.screen, "プレイ / Enter", self.font_medium, WHITE, play_button.centerx, play_button.centery)
+        draw_text(self.screen, "ルール / R", self.font_medium, WHITE, rules_button.centerx, rules_button.centery)
+        draw_text(self.screen, "実績 / C", self.font_small, WHITE, achieve_button.centerx, achieve_button.centery)
         
+        # ボリュームボタンも描画してフリーズを防ぐ
+        pygame.draw.rect(self.screen, GRAY, bgm_minus_btn)
+        draw_text(self.screen, "-", self.font_medium, WHITE, bgm_minus_btn.centerx, bgm_minus_btn.centery)
+        pygame.draw.rect(self.screen, GRAY, bgm_plus_btn)
+        draw_text(self.screen, "+", self.font_medium, WHITE, bgm_plus_btn.centerx, bgm_plus_btn.centery)
+        draw_text(self.screen, f"BGM: {int(self.bgm_volume * 100)}%", self.font_small, WHITE, 230, y_pos + 20)
+        pygame.draw.rect(self.screen, GRAY, sfx_minus_btn)
+        draw_text(self.screen, "-", self.font_medium, WHITE, sfx_minus_btn.centerx, sfx_minus_btn.centery)
+        pygame.draw.rect(self.screen, GRAY, sfx_plus_btn)
+        draw_text(self.screen, "+", self.font_medium, WHITE, sfx_plus_btn.centerx, sfx_plus_btn.centery)
+        draw_text(self.screen, f"SFX: {int(self.sfx_volume * 100)}%", self.font_small, WHITE, SCREEN_WIDTH - 250, y_pos + 20)
+
+        pygame.display.flip() # 画面に描画！
+        await asyncio.sleep(0) # ブラウザに制御を返す
+        # ★★★ 修正箇所B: ここまで ★★★    
         while self.game_state == STATE_TITLE:
             self.clock.tick(FPS); self.screen.fill(BLACK)
             draw_text(self.screen, "津波から逃げろ！", self.font_large, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 5)
@@ -505,6 +530,7 @@ async def main():
     pygame.display.set_caption("津波から逃げろ！")
 
     game = Game()
+    await asyncio.sleep(0.01) # 環境が完全に整うのを待つ
     game.screen = screen 
     game.running = True # ★ runningフラグを初期化
     
