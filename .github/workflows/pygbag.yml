@@ -21,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # ★ V4に変更
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # ★ V5に変更
         with:
           python-version: '3.11'
 
@@ -35,11 +35,11 @@ jobs:
 
       - name: Build pygbag app
         run: |
-          # ★★★ ここのファイル名があなたのコードと一致しているか確認 ★★★
+          # ★★★ ここにあなたのゲームのメインファイル名を入力 ★★★
           pygbag --build tsunami_game.py
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3 # ★ V3に変更 (今回はこれがおそらく原因)
         with:
           path: build/web/
           
@@ -52,4 +52,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1-----
+        uses: actions/deploy-pages@v4 # ★ V4に変更
